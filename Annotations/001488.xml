@@ -1,0 +1,32 @@
+<?xml version="1.0" ?>
+<annotation>
+<folder>KITTI</folder>
+<filename>001488.png</filename>
+<source>
+<database>The KITTI Database</database>
+<annotation>KITTI</annotation>
+</source>
+<size>
+<width>1238</width>
+<height>374</height>
+<depth>3</depth>
+</size>
+<object>
+<name>Car</name>
+<bndbox>
+<xmin>712</xmin>
+<ymin>155</ymin>
+<xmax>858</xmax>
+<ymax>269</ymax>
+</bndbox>
+</object>
+<object>
+<name>Pedestrian</name>
+<bndbox>
+<xmin>396</xmin>
+<ymin>166</ymin>
+<xmax>422</xmax>
+<ymax>246</ymax>
+</bndbox>
+</object>
+</annotation>
