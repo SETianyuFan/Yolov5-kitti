@@ -407,13 +407,6 @@ if __name__ == "__main__":
     createNNGraph()
     #createGpuGraph()
 ```
-### 实验成果
-NN运行时间
 
-![](tyTimeGraphNN.png)
-
-GPU数据传输时间
-
-![](tyTimeGraphGPU.png)
 
 
