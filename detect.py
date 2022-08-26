@@ -30,8 +30,12 @@ import platform
 import sys
 from pathlib import Path
 
+import numpy as np
 import torch
 import torch.backends.cudnn as cudnn
+import xlsxwriter as xw
+import time
+
 
 #判断程序位置
 FILE = Path(__file__).resolve()
@@ -63,7 +67,7 @@ def run(
         save_txt=False,  # save results to *.txt
         save_conf=False,  # save confidences in --save-txt labels
         save_crop=False,  # save cropped prediction boxes
-        nosave=False,  # do not save images/videos
+        nosave=True,  # do not save images/videos
         classes=None,  # filter by class: --class 0, or --class 0 2 3
         agnostic_nms=False,  # class-agnostic NMS
         augment=False,  # augmented inference
@@ -111,7 +115,18 @@ def run(
     # Run inference
     model.warmup(imgsz=(1 if pt else bs, 3, *imgsz))  # warmup
     seen, windows, dt = 0, [], [0.0, 0.0, 0.0]
+
+    #igpu = 0 #help to check wether img is the first one
+
     for path, im, im0s, vid_cap, s in dataset:
+        '''
+        if igpu == 0: #adding img into package
+            imSet = im
+        else:
+            imSet = np.append(imSet, im)
+        igpu = igpu + 1
+        '''
+
         t1 = time_sync()
         im = torch.from_numpy(im).to(device)
         im = im.half() if model.fp16 else im.float()  # uint8 to fp16/32
@@ -215,6 +230,23 @@ def run(
     if update:
         strip_optimizer(weights[0])  # update model (to fix SourceChangeWarning)
 
+    timeCost = t[0] + t[1] + t[2]
+
+    ''' # send package to gpu
+    torch.cuda.empty_cache()
+    gputime1 = time_sync()
+    print(np.size(imSet))
+    imSet = torch.from_numpy(imSet).to(device)
+    gputime2 = time_sync()
+    gputime3 = gputime2 - gputime1
+    gputime = gputime3/16.0
+    torch.cuda.empty_cache()
+    '''
+
+    return timeCost
+
+
+
 
 def parse_opt():
     parser = argparse.ArgumentParser()
@@ -254,7 +286,29 @@ def main(opt):
     check_requirements(exclude=('tensorboard', 'thop'))
     run(**vars(opt))
 
+def mainForTest(opt): # used for capture large scale data
+    check_requirements(exclude=('tensorboard', 'thop'))
+
+    workbook = xw.Workbook('tyTimeListNNTemp.xlsx')  #create exel form
+    worksheet1 = workbook.add_worksheet("sheet1")
+    worksheet1.activate()
+
+    for g in range(5000):
+        timecost = run(**vars(opt))  # get data
+
+        row = 'A' + str(g+1)  # write data into exel
+        insertdataA = [str(timecost)]
+        worksheet1.write_row(row, insertdataA)
+        '''
+        row = 'B' + str(g+1)
+        insertdataB = [str(gpuTimeCost)]
+        worksheet1.write_row(row, insertdataB)
+        '''
+        print("step: " + str(g))  # show what step now
+
+    workbook.close()  # close exel for saving
 
 if __name__ == "__main__":
     opt = parse_opt()
-    main(opt)
+    # main(opt)
+    mainForTest(opt)
