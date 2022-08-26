@@ -6,7 +6,8 @@
 > * 配置Yolov5环境
 > * 转换kitti数据集格式
 > * 使用Yolov5训练数据集
-> * 使用指令
+> * *获得NN运行时间及GPU数据输入时间
+> * *具体操作方法
 
 
  
@@ -295,6 +296,121 @@ python detect.py --weights runs/train/exp6/weights/best.pt
 --source *******.png --device 0
 ```
 
+---
 
+## *获得NN运行时间及GPU数据输入时间
+
+### 获得NN运行时间数据
+因为原detect.py文件已经收集了神经网络各部分运行时间，因此对其进行简要改动
+即可快速获得时间数据。
+
+首先在run函数末尾对收集的单次运行时间进行返回
+```
+    timeCost = t[0] + t[1] + t[2]
+    return timeCost
+```
+添加maiForTest函数用于循环收集单次数据并写入文件
+```
+
+def mainForTest(opt): # used for capture large scale data
+    check_requirements(exclude=('tensorboard', 'thop'))
+
+    workbook = xw.Workbook('tyTimeListNNTemp.xlsx')  #create exel form
+    worksheet1 = workbook.add_worksheet("sheet1")
+    worksheet1.activate()
+
+    for g in range(5000):
+        timecost = run(**vars(opt))  # get data
+
+        row = 'A' + str(g+1)  # write data into exel
+        insertdataA = [str(timecost)]
+        worksheet1.write_row(row, insertdataA)
+        '''
+        row = 'B' + str(g+1)
+        insertdataB = [str(gpuTimeCost)]
+        worksheet1.write_row(row, insertdataB)
+        '''
+        print("step: " + str(g))  # show what step now
+
+    workbook.close()  # close exel for saving
+
+    if __name__ == "__main__":
+        opt = parse_opt()
+        # main(opt)
+        mainForTest(opt)
+```
+
+运行时，要确保使用函数mainForTest并将原main函数注释。
+终端输入指令即可,对应指令如下:
+```
+1 picture
+python detect.py --weights runs/train/exp6/weights/best.pt --source tyKittiData/000000.png --device 0
+16 picture
+python detect.py --weights runs/train/exp6/weights/best.pt --source tyDirForTest --device 0
+7480 picture
+python detect.py --weights runs/train/exp6/weights/best.pt --source tyKittiData --device 0
+```
+### 获得向GPU传输数据时间
+
+添加tyToGpuTime.py用于收集时间数据。每次循环随机生成与图片矩阵相同的
+随机矩阵。
+
+```
+import torch
+import time
+import sys
+import numpy as np
+import xlsxwriter as xw
+
+gpu = torch.device("cuda")
+def gpuTimeTest():
+    torch.cuda.init()
+    x = np.random.random(size=(640, 6720))
+    start = time.time()
+    torch.from_numpy(x).to(gpu)
+    torch.cuda.synchronize()
+    gputime = (time.time() - start)/10
+    return gputime
+
+if __name__ == "__main__":
+    workbook = xw.Workbook('tyTimeListGPUTemp.xlsx')
+    worksheet1 = workbook.add_worksheet("sheet1")  # 创建子表
+    worksheet1.activate()  # 激活表
+    for i in range(5000):
+        gputime = gpuTimeTest()
+        row = 'A' + str(i + 1)
+        insertdataA = [str(gputime)]
+        worksheet1.write_row(row, insertdataA)
+    workbook.close()
+```
+最后添加tyCreateGraph.py用于生成图表
+
+```
+import pandas as pd
+import seaborn as sns
+def createGpuGraph():
+    dfGpu = pd.read_excel('tyTimeListGPU.xlsx')
+    y = dfGpu.values
+    graphGpu = sns.histplot(y)
+    figureGpu = graphGpu.get_figure()
+    figureGpu.savefig("tyTimeGraphGPUTemp.png")
+
+
+def createNNGraph():
+    dfNN = pd.read_excel('tyTimeListNN.xlsx')
+    y = dfNN.values
+    graphNN = sns.histplot(y)
+    figureNN = graphNN.get_figure()
+    figureNN.savefig("tyTimeGraphNNTemp.png")
+
+if __name__ == "__main__":
+    createNNGraph()
+    #createGpuGraph()
+```
+### 实验成果
+NN运行时间
+![](tyTimeGraphNN.png)
+GPU数据传输时间
+![](tyTimeGraphGPU.png)
 
 

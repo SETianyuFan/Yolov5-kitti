@@ -16,6 +16,6 @@ def createNNGraph():
     figureNN.savefig("tyTimeGraphNNTemp.png")
 
 if __name__ == "__main__":
-    createNNGraph()
-    #createGpuGraph()
+    #createNNGraph()
+    createGpuGraph()
 

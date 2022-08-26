@@ -2,5 +2,5 @@
 python detect.py --weights runs/train/exp6/weights/best.pt --source tyKittiData/000000.png --device 0
 16 picture
 python detect.py --weights runs/train/exp6/weights/best.pt --source tyDirForTest --device 0
-7000 picture
+7480 picture
 python detect.py --weights runs/train/exp6/weights/best.pt --source tyKittiData --device 0

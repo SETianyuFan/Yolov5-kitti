@@ -11,7 +11,7 @@ def gpuTimeTest():
     start = time.time()
     torch.from_numpy(x).to(gpu)
     torch.cuda.synchronize()
-    gputime = (time.time() - start)/10
+    gputime = ((time.time() - start)/10)*1000
     return gputime
 
 if __name__ == "__main__":
@@ -20,7 +20,7 @@ if __name__ == "__main__":
     worksheet1.activate()  # 激活表
     for i in range(5000):
         gputime = gpuTimeTest()
-        row = 'A' + str(i + 1)
+        row = 'A' + str(i)
         insertdataA = [str(gputime)]
         worksheet1.write_row(row, insertdataA)
     workbook.close()
